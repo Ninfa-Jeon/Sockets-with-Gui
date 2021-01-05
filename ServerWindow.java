@@ -1,15 +1,24 @@
 import java.io.*;
 import java.net.*;
+import java.sql.Timestamp;
+import java.util.Date;
 public class ServerWindow extends javax.swing.JFrame {
     public ServerWindow() {
+        try {
+            ServerWindow.sendLog = new FileOutputStream("C:\\Users\\HP\\Desktop\\serverLog.txt",true);
+        } catch (FileNotFoundException ex) {
+        }
         initComponents();
     }
     public static PrintWriter pwPrintWriter;
     public static String message;
-    public static BufferedReader input = null;//get userinput
+    public static BufferedReader input = null;//get userinputOutputStream sendLog 
+    public static OutputStream sendLog;
+    
+        
     
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 
         jFrame1 = new javax.swing.JFrame();
@@ -84,17 +93,28 @@ public class ServerWindow extends javax.swing.JFrame {
         );
 
         pack();
-    }// </editor-fold>//GEN-END:initComponents
+    }// </editor-fold>                        
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
         message = jTextField1.getText();
         InputStream targetStream = new ByteArrayInputStream(message.getBytes());
-        input = new BufferedReader(new InputStreamReader(targetStream)); 
+        //Date object
+        Date date= new Date();
+        //getTime() returns current time in milliseconds
+        long time = date.getTime();
+        //Passed the milliseconds to constructor of Timestamp class 
+        Timestamp ts = new Timestamp(time);
+        try {
+            sendLog.write(("[ME - "+ts+"]: "+message+'\n').getBytes());
+        } catch (IOException ex) {
+        }
+        input = new BufferedReader(new InputStreamReader(targetStream));
         pwPrintWriter.println(message);//send message to client with PrintWriter
-	pwPrintWriter.flush();//flush the PrintWriter
+        pwPrintWriter.flush();//flush the PrintWriter
         jTextArea1.append(">>>"+message+"\n");
         jTextField1.setText("");
-    }//GEN-LAST:event_jButton1ActionPerformed
+       
+    }                                        
    
     /**
      * @param args the command line arguments
@@ -143,13 +163,13 @@ public class ServerWindow extends javax.swing.JFrame {
         }
     }
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // Variables declaration - do not modify                     
     private javax.swing.JButton jButton1;
     private javax.swing.JFrame jFrame1;
     private javax.swing.JScrollPane jScrollPane1;
     public static javax.swing.JTextArea jTextArea1;
     public static javax.swing.JTextField jTextField1;
-    // End of variables declaration//GEN-END:variables
+    // End of variables declaration                   
 }
 class ReceiveFromClientThread implements Runnable{
     Socket clientSocket=null;
@@ -166,8 +186,15 @@ class ReceiveFromClientThread implements Runnable{
 		while((messageString = brBufferedReader.readLine())!= null){//assign message from client to messageString
                     if(messageString.equals("EXIT"))
 			break;//break to close socket if EXIT
+                    //Date object
+                    Date date= new Date();
+                    //getTime() returns current time in milliseconds
+                    long time = date.getTime();
+                    //Passed the milliseconds to constructor of Timestamp class 
+                    Timestamp ts = new Timestamp(time);
                     ServerWindow.jTextArea1.append("From Client: " + messageString+"\n");//print the message from client
-		}
+		    ServerWindow.sendLog.write(("[CLIENT - "+ts+"]: "+messageString+'\n').getBytes());
+                }
                 this.clientSocket.close();
                 System.exit(0);
             }		
@@ -183,6 +210,6 @@ class SendToClientThread implements Runnable{
     public void run() {
 	try{
             ServerWindow.pwPrintWriter =new PrintWriter(new OutputStreamWriter(this.clientSock.getOutputStream()));//get outputstream
-	}catch(Exception ex){ServerWindow.jTextArea1.append(ex.getMessage());}	
+        }catch(Exception ex){ServerWindow.jTextArea1.append(ex.getMessage());}	
     }//end run
 }//end class SendToClientThread
